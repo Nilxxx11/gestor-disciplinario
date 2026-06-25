@@ -80,6 +80,10 @@
                 <i class="fas fa-database"></i>
                 <span>Juridica</span>
             </button>
+            <button class="nav-tab" data-target="chat-section" id="chatTab">
+                <i class="fas fa-robot"></i>
+                <span>Chat AI</span>
+            </button>
         </div>
 
         <!-- Messages -->
@@ -341,6 +345,53 @@
             </div>
         </section>
     </div>
+
+        <!-- Chat AI Section -->
+        <section id="chat-section" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-robot"></i>
+                    <h2>Chat con IA</h2>
+                </div>
+                <div class="chat-container">
+                    <div class="chat-config">
+                        <div class="form-group">
+                            <label for="apiKeyInput">
+                                <i class="fas fa-key"></i>
+                                API Key<span id="apiKeyStatus" class="api-key-status"></span>
+                            </label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="password" id="apiKeyInput" class="form-input" placeholder="sk-or-v1-..." style="flex:1;">
+                                <button class="btn btn-outline" onclick="toggleApiKeyVisibility()" id="btnToggleKey" type="button" title="Mostrar/ocultar">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-primary" onclick="guardarApiKey()" id="btnGuardarKey" type="button" style="white-space:nowrap;">
+                                    <i class="fas fa-save"></i> Guardar
+                                </button>
+                                <button class="btn btn-danger" onclick="borrarApiKey()" id="btnBorrarKey" type="button" style="white-space:nowrap; display:none;">
+                                    <i class="fas fa-trash"></i> Borrar
+                                </button>
+                            </div>
+                            <small style="color:#666;">Agrega la API key para usar</small>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-message ai">
+                            <div class="chat-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="chat-bubble">
+                                Hola, soy el asistente IA. Puedes hacerme preguntas sobre todos los datos registrados en el sistema disciplinario. Ej: "¿Cuántas solicitudes hay pendientes?", "¿Qué sanciones se han aplicado?", etc.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <textarea id="chatInput" class="form-textarea" rows="2" placeholder="Escribe tu pregunta aquí..." style="resize:none; flex:1;"></textarea>
+                        <button class="btn btn-primary" onclick="enviarMensaje()" id="btnEnviarChat" style="height:44px; align-self:flex-end;">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
 
     <!-- Detail Modal (mejorado) -->
     <div id="detailModal" class="modal">

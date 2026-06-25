@@ -106,6 +106,7 @@ async function actualizarUIUsuario(user) {
     const logoutBtn = document.getElementById('logoutBtn');
     const adminTab = document.getElementById('adminTab');
     const reviewTab = document.getElementById('reviewTab');
+    const chatTab = document.getElementById('chatTab');
 
     if (user) {
         currentUser = user;
@@ -146,6 +147,9 @@ async function actualizarUIUsuario(user) {
         // Mostrar tabs según rol
         if (adminTab) adminTab.style.display = currentUserRole === 'admin' ? 'flex' : 'none';
         if (reviewTab) reviewTab.style.display = currentUserRole === 'revisor' || currentUserRole === 'admin' ? 'flex' : 'none';
+        if (chatTab) chatTab.style.display = currentUserRole === 'admin' || currentUserRole === 'revisor' ? 'flex' : 'none';
+
+        cargarApiKey();
 
     } else {
         currentUser = null;
@@ -157,6 +161,7 @@ async function actualizarUIUsuario(user) {
         if (logoutBtn) logoutBtn.style.display = 'none';
         if (adminTab) adminTab.style.display = 'none';
         if (reviewTab) reviewTab.style.display = 'none';
+        if (chatTab) chatTab.style.display = 'none';
 
         // Redirigir a form si está en sección restringida
         if (document.getElementById('admin-section')?.classList.contains('active') ||
@@ -1623,6 +1628,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 cargarRegistros();
             } else if (targetId === 'review-section' && (currentUserRole === 'revisor' || currentUserRole === 'admin')) {
                 cargarRegistrosRevision();
+            } else if (targetId === 'chat-section' && (currentUserRole === 'admin' || currentUserRole === 'revisor')) {
+                if (!registros || registros.length === 0) {
+                    if (currentUserRole === 'admin') cargarRegistros();
+                    else cargarRegistrosRevision();
+                }
             }
         });
     });
@@ -1790,3 +1800,201 @@ function filtrarRevision() {
         if (coincide) visibleCount++;
     });
 }
+
+// ============================================
+//     CHAT CON IA
+// ============================================
+
+function actualizarStatusApiKey() {
+    const key = localStorage.getItem('openrouter_api_key');
+    const status = document.getElementById('apiKeyStatus');
+    const input = document.getElementById('apiKeyInput');
+    const btnBorrar = document.getElementById('btnBorrarKey');
+    const btnGuardar = document.getElementById('btnGuardarKey');
+    if (key) {
+        if (status) {
+            status.innerHTML = '<i class="fas fa-check-circle"></i> Configurada';
+            status.className = 'api-key-status configurada';
+        }
+        if (input) input.placeholder = 'sk-or-v1-...';
+        if (btnBorrar) btnBorrar.style.display = '';
+        if (btnGuardar) btnGuardar.style.display = 'none';
+    } else {
+        if (status) {
+            status.innerHTML = '<i class="fas fa-times-circle"></i> No configurada';
+            status.className = 'api-key-status no-configurada';
+        }
+        if (input) input.value = '';
+        if (btnBorrar) btnBorrar.style.display = 'none';
+        if (btnGuardar) btnGuardar.style.display = '';
+    }
+}
+
+function guardarApiKey() {
+    const input = document.getElementById('apiKeyInput');
+    const key = input.value.trim();
+    if (!key) {
+        mostrarMensaje('Ingresa una API key válida', 'error');
+        return;
+    }
+    localStorage.setItem('openrouter_api_key', key);
+    actualizarStatusApiKey();
+    mostrarMensaje('API key guardada correctamente', 'success');
+}
+
+function borrarApiKey() {
+    localStorage.removeItem('openrouter_api_key');
+    actualizarStatusApiKey();
+    mostrarMensaje('API key eliminada', 'success');
+}
+
+function toggleApiKeyVisibility() {
+    const input = document.getElementById('apiKeyInput');
+    const btn = document.getElementById('btnToggleKey');
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+    } else {
+        input.type = 'password';
+        btn.innerHTML = '<i class="fas fa-eye"></i>';
+    }
+}
+
+function cargarApiKey() {
+    actualizarStatusApiKey();
+}
+
+function getContextoDatos() {
+    if (!registros || registros.length === 0) {
+        return 'No hay datos registrados en el sistema.';
+    }
+
+    const resumen = {
+        total_solicitudes: registros.length,
+        solicitudes: registros.map(r => ({
+            id: r.id,
+            fecha_solicitud: r.fecha_solicitud,
+            trabajador: r.trabajador_nombre,
+            cedula: r.trabajador_cedula,
+            cargo: r.trabajador_cargo,
+            area: r.trabajador_area,
+            estado: formatEstado(r.estado || 'pendiente'),
+            solicitante: r.solicitante_nombre,
+            hechos_descripcion: r.hechos_descripcion ? r.hechos_descripcion.substring(0, 200) : '',
+            sancion_tipo: r.sancion?.tipo || 'N/A',
+            sancion_descripcion: r.sancion?.descripcion ? r.sancion.descripcion.substring(0, 200) : '',
+            revision_decision: r.revision?.decision || 'N/A',
+            revision_comentario: r.revision?.comentario || ''
+        }))
+    };
+
+    return JSON.stringify(resumen, null, 2);
+}
+
+function agregarMensaje(texto, tipo) {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+
+    const div = document.createElement('div');
+    div.className = `chat-message ${tipo}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'chat-avatar';
+    avatar.innerHTML = tipo === 'ai' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.textContent = texto;
+
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+async function enviarMensaje() {
+    const input = document.getElementById('chatInput');
+    const btn = document.getElementById('btnEnviarChat');
+    const mensaje = input.value.trim();
+
+    if (!mensaje) return;
+
+    const apiKey = localStorage.getItem('openrouter_api_key');
+    if (!apiKey) {
+        mostrarMensaje('Primero configura tu API key de OpenRouter en el panel de Chat AI', 'error');
+        return;
+    }
+
+    agregarMensaje(mensaje, 'user');
+    input.value = '';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const contexto = getContextoDatos();
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': window.location.origin,
+                'X-Title': 'Gestor Disciplinario'
+            },
+            body: JSON.stringify({
+                model: 'openai/gpt-4o-mini',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `Eres un asistente experto en análisis de datos disciplinarios. Tu función es responder preguntas basándote exclusivamente en los datos que se te proporcionan a continuación.
+
+DATOS COMPLETOS DEL SISTEMA (formato JSON):
+${contexto}
+
+Instrucciones:
+- Responde SOLO con la información contenida en estos datos.
+- Si te preguntan algo que no está en los datos, indícalo claramente.
+- Proporciona análisis, resúmenes, conteos y tendencias cuando sea relevante.
+- Sé conciso pero completo en tus respuestas.
+- Usa lenguaje claro y profesional.`
+                    },
+                    {
+                        role: 'user',
+                        content: mensaje
+                    }
+                ],
+                temperature: 0.3,
+                max_tokens: 2000
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error?.message || `Error HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const respuesta = data.choices[0]?.message?.content || 'No se pudo obtener respuesta.';
+        agregarMensaje(respuesta, 'ai');
+
+    } catch (error) {
+        console.error('Error chat:', error);
+        agregarMensaje('Error: ' + error.message, 'ai');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        const chatSection = document.getElementById('chat-section');
+        if (chatSection && chatSection.classList.contains('active')) {
+            const input = document.getElementById('chatInput');
+            if (document.activeElement === input) {
+                e.preventDefault();
+                enviarMensaje();
+            }
+        }
+    }
+});
