@@ -80,6 +80,11 @@ function formatearFecha(fechaString) {
     }
 }
 
+function formatEstado(estado) {
+    if (estado === 'no_sancionado') return 'No sancionado';
+    return estado;
+}
+
 function escapeHTML(str) {
     if (!str) return '';
     return String(str)
@@ -534,7 +539,7 @@ function actualizarTablaAdmin() {
             <td>${escapeHTML(registro.trabajador_nombre || '')}</td>
             <td>${escapeHTML(registro.trabajador_cedula || '')}</td>
             <td>${escapeHTML(registro.trabajador_cargo || '')}</td>
-            <td><span class="${estadoClass}">${estado}</span></td>
+            <td><span class="${estadoClass}">${formatEstado(estado)}</span></td>
             <td>
             
 <div class="action-buttons">
@@ -605,7 +610,7 @@ function actualizarTablaRevision() {
             <td>${escapeHTML(registro.trabajador_nombre || '')}</td>
             <td>${escapeHTML(registro.trabajador_cedula || '')}</td>
             <td>${escapeHTML(registro.trabajador_cargo || '')}</td>
-            <td><span class="${estadoClass}">${estado}</span></td>
+            <td><span class="${estadoClass}">${formatEstado(estado)}</span></td>
             <td>
                 <div class="action-buttons">
                     <button class="btn-icon view-btn" data-id="${registro.id}" title="Ver detalles">
@@ -867,6 +872,8 @@ async function guardarSanction() {
         return;
     }
 
+    const nuevoEstado = sancion.tipo === 'No aplica' ? 'no_sancionado' : 'sancionado';
+
     mostrarCarga("Guardando sanción...");
 
     try {
@@ -874,7 +881,7 @@ async function guardarSanction() {
             .from('solicitudes')
             .update({
                 sancion: sancion,
-                estado: 'sancionado'
+                estado: nuevoEstado
             })
             .eq('id', currentPreviewId);
 
@@ -1124,7 +1131,7 @@ function generarPlantillaRellenada(registro) {
                 </tr>
                 <tr>
                     <td style="border:1px solid #000; padding:4px; width:30%;">Estado:</td>
-                    <td style="border:1px solid #000; padding:4px; text-transform:uppercase;">${registroAdaptado.estado || 'pendiente'}</td>
+                    <td style="border:1px solid #000; padding:4px; text-transform:uppercase;">${formatEstado(registroAdaptado.estado || 'pendiente')}</td>
                 </tr>
                 ${registroAdaptado.revision ? `
                 <tr>
@@ -1431,7 +1438,7 @@ function mostrarDetalleRegistro(id) {
                         <div class="detail-label">Estado</div>
                         <div class="detail-value">
                             <span class="status-badge status-${registroAdaptado.estado || 'pendiente'}">
-                                ${registroAdaptado.estado || 'pendiente'}
+                                ${formatEstado(registroAdaptado.estado || 'pendiente')}
                             </span>
                         </div>
                     </div>
