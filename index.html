@@ -15,6 +15,7 @@
     <!-- Librerías -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <!-- supabase -->
     <!-- Primero: Supabase JS (DEBE IR ANTES que config.js) -->
@@ -286,6 +287,9 @@
                 <div class="card-header">
                     <i class="fas fa-database"></i>
                     <h2>Administración de Solicitudes</h2>
+                    <button class="btn-excel" onclick="exportarExcel()" title="Exportar todo a Excel">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </button>
                 </div>
 
                 <div class="admin-controls">

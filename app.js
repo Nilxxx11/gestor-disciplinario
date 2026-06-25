@@ -459,6 +459,61 @@ async function guardarSolicitud(e) {
     }
 }
 
+async function exportarExcel() {
+    if (!currentUser || currentUserRole !== 'admin') return;
+
+    mostrarCarga("Generando reporte Excel...");
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('solicitudes')
+            .select('*')
+            .order('fecha_registro', { ascending: false });
+
+        if (error) throw error;
+
+        const rows = data.map(r => ({
+            'Fecha Solicitud': r.fecha_solicitud || '',
+            'Trabajador': r.trabajador_nombre || '',
+            'Cédula': r.trabajador_cedula || '',
+            'Cargo': r.trabajador_cargo || '',
+            'Área': r.trabajador_area || '',
+            'Jefe Inmediato': r.trabajador_jefe || '',
+            'Solicitante': r.solicitante_nombre || '',
+            'Cargo Solicitante': r.solicitante_cargo || '',
+            'Hechos - Fechas': r.hechos_fechas || '',
+            'Hechos - Lugar': r.hechos_lugar || '',
+            'Hechos - Descripción': r.hechos_descripcion || '',
+            'Hechos - Info Adicional': r.hechos_info_adicional || '',
+            'Estado': formatEstado(r.estado || 'pendiente'),
+            'Fecha Registro': r.fecha_registro || '',
+            'Creado Por': r.creado_por || '',
+            'Sanción - Tipo': r.sancion?.tipo || '',
+            'Sanción - Descripción': r.sancion?.descripcion || '',
+            'Sanción - Fecha Inicio': r.sancion?.fechaInicio || '',
+            'Sanción - Fecha Fin': r.sancion?.fechaFin || '',
+            'Sanción - Impuesta Por': r.sancion?.admin || '',
+            'Sanción - Fecha Registro': r.sancion?.fechaRegistro || '',
+            'Revisión - Decisión': r.revision?.decision || '',
+            'Revisión - Comentario': r.revision?.comentario || '',
+            'Revisión - Fecha': r.revision?.fecha || '',
+            'Revisión - Revisor': r.revision?.revisor || ''
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Solicitudes');
+        XLSX.writeFile(wb, `reporte_solicitudes_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+        mostrarMensaje('Reporte Excel generado correctamente', 'success');
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarMensaje('Error al generar reporte Excel: ' + error.message, 'error');
+    } finally {
+        ocultarCarga();
+    }
+}
+
 async function cargarRegistros() {
     if (!currentUser || currentUserRole !== 'admin') return;
 

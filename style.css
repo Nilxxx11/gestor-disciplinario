@@ -277,6 +277,31 @@ body {
     font-weight: 500;
 }
 
+.btn-excel {
+    margin-left: auto;
+    padding: 8px 16px;
+    background-color: #1d6f42;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s;
+}
+
+.btn-excel:hover {
+    background-color: #155d36;
+}
+
+.btn-excel i {
+    font-size: 16px;
+    color: #fff !important;
+}
+
 /* ========== MESSAGE CARD ========== */
 .message-card {
     display: none;
